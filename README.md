@@ -8,3 +8,7 @@
 # Requirements
 - [Node.js](https://nodejs.org/en/download/releases/) v10.18.0+  
 - [Metamask extension](https://metamask.io/download/) on your browser  
+
+
+for more details refers to this slides https://docs.google.com/presentation/d/1Y2fhZALnjWfMfZDIsllWEaBgyDVtgA9JR9WPZTFlrhc/edit#slide=id.p
+here i add the refernces that is used in project
