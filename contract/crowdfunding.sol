@@ -32,6 +32,15 @@ contract crowdfunding{
         uint256[] amount;
         bool[] refundClaimed;
         bool claimedAmount;
+
+
+    // add these extra variables
+        string proof;
+        uint256 phase;
+        uint256 phaseNo;
+        address[] validator;
+        bool upload;
+        bool run;
     }
 
     // Structure used to return metadata of each project
@@ -46,6 +55,14 @@ contract crowdfunding{
         uint256 creationTime;
         uint256 duration;
         Category category;
+
+
+        string proof;
+        uint256 phase;
+        uint256 phaseNo;
+        uint256 validatorNo;
+        bool upload;
+        bool run;
     }
 
     // Each user funding gets recorded in Funded structure
@@ -79,7 +96,9 @@ contract crowdfunding{
         uint256 _fundingGoal,
         uint256 _duration,
         Category _category,
-        RefundPolicy _refundPolicy
+        RefundPolicy _refundPolicy,
+
+        uint256 _phase
     ) external {
         projects.push(Project({
             creatorAddress: msg.sender,
@@ -97,7 +116,16 @@ contract crowdfunding{
             contributors: new address[](0),
             amount: new uint256[](0),
             claimedAmount: false,
-            refundClaimed: new bool[](0)
+            refundClaimed: new bool[](0),
+
+
+            proof:"",
+            phase:_phase,
+            phaseNo:1,
+        // uint256 valid;
+            validator:new address[](0),
+             upload:false,
+            run:true
         }));
         addressProjectsList[msg.sender].push(projects.length - 1);
     }
@@ -116,7 +144,23 @@ contract crowdfunding{
                 projects[i].contributors.length,
                 projects[i].creationTime,
                 projects[i].duration,
-                projects[i].category
+                projects[i].category,
+
+
+                projects[i].proof,
+                projects[i].phase,
+                projects[i].phaseNo,
+                projects[i].validator.length,
+                projects[i].upload,
+                projects[i].run
+
+        //          string proof;
+        // uint256 phase;
+        // uint256 phaseNo;
+        // // uint256 valid;
+        // uint256 validatorNo;
+        // bool upload;
+        // bool run;
             );
         }
         return newList;
@@ -139,7 +183,15 @@ contract crowdfunding{
                     projects[i].contributors.length,
                     projects[i].creationTime,
                     projects[i].duration,
-                    projects[i].category
+                    projects[i].category,
+
+
+                    projects[i].proof,
+                projects[i].phase,
+                projects[i].phaseNo,
+                projects[i].validator.length,
+                projects[i].upload,
+                projects[i].run
                 );
             } else {
                 newList[index] = ProjectMetadata(
@@ -152,7 +204,16 @@ contract crowdfunding{
                     0,
                     0,
                     0,
-                    Category.DESIGNANDTECH
+                    Category.DESIGNANDTECH,
+
+                     "Invalid Project",
+                    0,
+                    0,
+                    // 0,
+                    0,
+                    false,
+                    false
+
                 );
             }
 
@@ -203,12 +264,54 @@ contract crowdfunding{
         addToFundingList(_index);
     }
 
-    // Funds the projects at given index
+
+//  add this function to upload proof
+      function uploadProof(uint256 _index) external validIndex(_index)
+    {
+        projects[_index].proof=_proof;
+        projects[_index].upload=true;
+    }
+
+
+//    add this function to be used by funders to validate project
+
+    function validateProject(uint256 _index) external validIndex(_index) returns (bool)
+    {
+        for(uint256 i=0 ; i<projects[_index].validator.length; i++)
+        {
+            if(projects[_index].validator[i]==msg.sender)
+            {
+                return bool(false);
+            }
+        }
+        projects[_index].validator.push(msg.sender);
+        if(projects[_index].validator.length>=projects[_index].contributors.length/2)
+        {
+            projects[_index].run=true;
+            delete projects[_index].validator;
+            projects[_index].upload=false;
+            projects[_index].phaseNo++;
+            projects[_index].proof="";
+        }
+        return bool(true);
+
+    }
+
+
+
+
+
+    // update earlier Fund project function, add extra conditions also to chech project is verified or not
     function fundProject(uint256 _index) payable external validIndex(_index)  {
         require(projects[_index].creatorAddress != msg.sender, "You are the project owner");
         require(projects[_index].duration + projects[_index].creationTime >= block.timestamp, "Project Funding Time Expired");
         addContribution(_index);
         projects[_index].amountRaised += msg.value;
+
+        if(projects[_index].amountRaised>=projects[_index].fundingGoal/(projects[_index].phase/projects[_index].phaseNo))
+        {
+            projects[_index].run=false;
+        }
     }
 
     // Helps project creator to transfer the raised funds to his address
